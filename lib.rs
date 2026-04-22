@@ -1,7 +1,8 @@
-#![cfg_attr(feature="unstable", feature(coroutines, iter_from_coroutine, yield_expr)]
-use {image::{rgb8, rgbf, rgba8, Image}, vector::{num::{abs, fract}, size, uint2, vec2, xy}};
+#![cfg_attr(feature="unstable", feature(coroutines, iter_from_coroutine, yield_expr))]
+use {image::{rgb8, rgbf, rgba8, Image}, vector::{num::{abs, fract}, uint2, vec2, xy}};
 
-#[cfg(feature="unstable")] pub fn generate_line(size: size, p: [vec2; 2]) -> impl Iterator<Item=(uint2, uint2, f32, f32)> {
+// FIXME cannot feature gate yield expr
+/*#[cfg(feature="unstable")] pub fn generate_line(size: uint2, p: [vec2; 2]) -> impl Iterator<Item=(uint2, uint2, f32, f32)> {
 	let d = p[1] - p[0];
 	let (transpose, p0, p1, d) = if abs(d.x) < abs(d.y) { (true, p[0].yx(), p[1].yx(), d.yx()) } else { (false, p[0], p[1], d) };
 	assert!(d.x != 0.); // p0==p1
@@ -42,11 +43,6 @@ use {image::{rgb8, rgbf, rgba8, Image}, vector::{num::{abs, fract}, size, uint2,
 	for (p0, p1, cx, cy) in generate_line(size, [p0, p1]) { f(p0, cx*(1.-cy)); f(p1, cx*cy) }
 }
 
-#[cfg(feature="unstable")]
-	let mut f = |p,_|
-	for (p0, p1, cx, cy) in generate_line(size, [p0, p1]) { f(p0, cx*(1.-cy)); f(p1, cx*cy) }
-}
-
 fn blend(eotf: &[f32; 256], oetf: &[u8; 0x1000], target: &mut Image<&mut[rgba8]>, color: rgbf, p: uint2, coverage: f32) {
 	if p.x < target.size.x && p.y < target.size.y { target[p] = image::lerp/*PQ10(PQ10⁻¹)*/(eotf, oetf, coverage, rgb8::from(target[p]), color).into(); }
 }
@@ -76,7 +72,7 @@ fn blend(eotf: &[f32; 256], oetf: &[u8; 0x1000], target: &mut Image<&mut[rgba8]>
 	} else {
 		//unimplemented!()
 	}
-}
+}*/
 
 // inline generate_line coroutine in line_no_blend to provide line_no_blend implementation without unstable/nightly features
 #[cfg(not(feature="unstable"))] pub fn line_no_blend(mut target: Image<&mut[rgba8]>, p0: vec2, p1: vec2, color: rgba8) {
@@ -94,8 +90,9 @@ fn blend(eotf: &[f32; 256], oetf: &[u8; 0x1000], target: &mut Image<&mut[rgba8]>
 		let yend = p0.y + gradient * (xend - p0.x);
 		let xgap = 1. - (p0.x + 1./2. - xend);
 		let fract_yend = yend - f32::floor(yend);
-		let p = f(xend as u32, yend as u32, xgap, fract_yend);
-		if p < target.size { target[p] = color; };
+		let (p0, p1, _, _) = f(xend as u32, yend as u32, xgap, fract_yend);
+		if p0 < target.size { target[p0] = color; };
+		if p1 < target.size { target[p1] = color; };
 		(xend as i32, yend + gradient)
 	};
 	let xend = f32::round(p1.x);
@@ -104,8 +101,9 @@ fn blend(eotf: &[f32; 256], oetf: &[u8; 0x1000], target: &mut Image<&mut[rgba8]>
 		let x = i0+1;
 		let (mut intery, mut x) = if x < 0 { (intery+(0-x as i32) as f32 * gradient, 0) } else { (intery, x as u32) };
 		while x < i1.min(if transpose { size.y } else { size.x }) {
-			let p = f(x, intery as u32, 1., fract(intery));
-			if p < target.size { target[p] = color; };
+			let (p0, p1, _, _) = f(x, intery as u32, 1., fract(intery));
+			if p0 < target.size { target[p0] = color; };
+			if p1 < target.size { target[p1] = color; };
 			intery += gradient;
 			x += 1;
 		}
@@ -113,6 +111,7 @@ fn blend(eotf: &[f32; 256], oetf: &[u8; 0x1000], target: &mut Image<&mut[rgba8]>
 	let yend = p1.y + gradient * (xend - p1.x);
 	let xgap = p1.x + 1./2. - xend;
 	let fract_yend = yend - f32::floor(yend);
-	let p = f(xend as u32, yend as u32, xgap, fract_yend);
-	if p < target.size { target[p] = color; };
+	let (p0, p1, _, _) = f(xend as u32, yend as u32, xgap, fract_yend);
+	if p0 < target.size { target[p0] = color; };
+			if p1 < target.size { target[p1] = color; };
 }
