@@ -1,0 +1,10 @@
+package={name='line', version='0.0.0', edition='2024'}
+lib={path='lib.rs'}
+
+[features]
+unstable=[]
+
+[dependencies]
+num={git='https://github.com/Matthias-Fauconneau/num'}
+vector={git='https://github.com/Matthias-Fauconneau/vector'}
+image={git='https://github.com/Matthias-Fauconneau/image'}
