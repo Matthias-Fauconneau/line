@@ -91,8 +91,8 @@ fn blend(eotf: &[f32; 256], oetf: &[u8; 0x1000], target: &mut Image<&mut[rgba8]>
 		let xgap = 1. - (p0.x + 1./2. - xend);
 		let fract_yend = yend - f32::floor(yend);
 		let (p0, p1, _, _) = f(xend as u32, yend as u32, xgap, fract_yend);
-		if p0 < target.size { target[p0] = color; };
-		if p1 < target.size { target[p1] = color; };
+		if let Some(p) = target.get_mut(p0) { *p = color; }
+		if let Some(p) = target.get_mut(p1) { *p = color; }
 		(xend as i32, yend + gradient)
 	};
 	let xend = f32::round(p1.x);
@@ -102,8 +102,8 @@ fn blend(eotf: &[f32; 256], oetf: &[u8; 0x1000], target: &mut Image<&mut[rgba8]>
 		let (mut intery, mut x) = if x < 0 { (intery+(0-x as i32) as f32 * gradient, 0) } else { (intery, x as u32) };
 		while x < i1.min(if transpose { size.y } else { size.x }) {
 			let (p0, p1, _, _) = f(x, intery as u32, 1., fract(intery));
-			if p0 < target.size { target[p0] = color; };
-			if p1 < target.size { target[p1] = color; };
+			if let Some(p) = target.get_mut(p0) { *p = color; }
+			if let Some(p) = target.get_mut(p1) { *p = color; }
 			intery += gradient;
 			x += 1;
 		}
@@ -112,6 +112,6 @@ fn blend(eotf: &[f32; 256], oetf: &[u8; 0x1000], target: &mut Image<&mut[rgba8]>
 	let xgap = p1.x + 1./2. - xend;
 	let fract_yend = yend - f32::floor(yend);
 	let (p0, p1, _, _) = f(xend as u32, yend as u32, xgap, fract_yend);
-	if p0 < target.size { target[p0] = color; };
-			if p1 < target.size { target[p1] = color; };
+	if let Some(p) = target.get_mut(p0) { *p = color; }
+	if let Some(p) = target.get_mut(p1) { *p = color; }
 }
